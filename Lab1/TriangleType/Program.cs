@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Globalization;
 
 namespace TriangleType
 {
 	class Program
 	{
-		public static void Main(string[] args)
+		public static int Main(string[] args)
 		{
 			try
 			{
@@ -22,7 +18,10 @@ namespace TriangleType
 			catch (Exception e)
 			{
 				Console.WriteLine(e.Message);
+				return 1;
 			}
+
+			return 0;
 		}
 
 		private class TriangleSides
@@ -52,12 +51,13 @@ namespace TriangleType
 		{
 			if (args.Length < ARGUMENTS_COUNT)
 			{
-				throw new Exception("Укажите длины сторон в качестве параметров. Формат ввода: triangle.exe a b c");
+				throw new Exception("Укажите длины сторон в качестве параметров. " +
+					"Формат ввода: triangle.exe a b c");
 			}
 
 			try
 			{
-				CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+				CultureInfo ci = CultureInfo.CurrentCulture.Clone() as CultureInfo;
 				ci.NumberFormat.CurrencyDecimalSeparator = FLOAT_SEPARATOR;
 
 				float a = float.Parse(args[0], NumberStyles.Any, ci);
@@ -77,11 +77,13 @@ namespace TriangleType
 			}
 			catch (OverflowException)
 			{
-				throw new Exception("Размер стороны слишком большой. Максимальное значение длинны: " + float.MaxValue);
+				throw new Exception("Размер стороны слишком большой. " +
+					"Максимальное значение длинны: " + float.MaxValue);
 			}
 			catch (ArgumentNullException)
 			{
-				throw new Exception("Укажите длины сторон в качестве параметров. Формат ввода: triangle.exe a b c");
+				throw new Exception("Укажите длины сторон в качестве параметров. " +
+					"Формат ввода: triangle.exe a b c");
 			}
 		}
 		private static TriangleType CalculateTriangleType(TriangleSides sides)
