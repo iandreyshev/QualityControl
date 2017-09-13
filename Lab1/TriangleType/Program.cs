@@ -55,16 +55,21 @@ namespace TriangleType
 					"Формат ввода: triangle.exe a b c");
 			}
 
+			string checkedArg = "";
+
 			try
 			{
 				CultureInfo ci = CultureInfo.CurrentCulture.Clone() as CultureInfo;
 				ci.NumberFormat.CurrencyDecimalSeparator = FLOAT_SEPARATOR;
 
+				checkedArg = args[0];
 				float a = float.Parse(args[0], NumberStyles.Any, ci);
+				checkedArg = args[1];
 				float b = float.Parse(args[1], NumberStyles.Any, ci);
+				checkedArg = args[2];
 				float c = float.Parse(args[2], NumberStyles.Any, ci);
 
-				if (a < 0 || b < 0 || c < 0)
+				if (a <= 0 || b <= 0 || c <= 0)
 				{
 					throw new Exception("Длины сторон могут быть только положительными.");
 				}
@@ -77,8 +82,15 @@ namespace TriangleType
 			}
 			catch (OverflowException)
 			{
-				throw new Exception("Размер стороны слишком большой. " +
-					"Максимальное значение длинны: " + float.MaxValue);
+				if (checkedArg[0] == '-')
+				{
+					throw new Exception("Длины сторон могут быть только положительными.");
+				}
+				else
+				{
+					throw new Exception("Размер стороны слишком большой. " +
+						"Максимальное значение длинны: " + float.MaxValue);
+				}
 			}
 			catch (ArgumentNullException)
 			{
