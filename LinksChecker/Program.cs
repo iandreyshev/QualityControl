@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net;
+using Utils;
 
 namespace LinksCheckerApp
 {
@@ -15,12 +11,12 @@ namespace LinksCheckerApp
 			{
 				if (args.Length < ARGS_COUNT)
 				{
-					throw new ArgumentNullException("Invalid arguments count." +
+					throw new ArgumentException("Invalid arguments count.\n" +
 						"Use: LinksChecker.exe <first link>.");
 				}
 
-				LinksChecker checker = new LinksChecker();
-				checker.Start("vk.com");
+				CLinksChecker checker = new CLinksChecker();
+				checker.Start(args[0]);
 			}
 			catch (Exception e)
 			{
