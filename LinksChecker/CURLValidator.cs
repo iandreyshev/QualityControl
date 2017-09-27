@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.IO;
 using HtmlAgilityPack;
+//using Freya.Types.Uri;
 
 namespace URLValidator
 {
@@ -45,11 +46,13 @@ namespace URLValidator
 			SetStartPage(startURL);
 			EnterProcess();
 			CalcResults();
+			CLogger.Write("Validate done.");
 		}
 		public void Reset()
 		{
 			passedURLs = new Dictionary<Uri, int>();
 			m_queue = new Queue<Uri>();
+			m_ignoredURLs = new HashSet<Uri>();
 			m_endTime = DateTime.MinValue;
 			m_brokenCount = 0;
 		}
@@ -60,6 +63,7 @@ namespace URLValidator
 		private string timeReport { get { return "End time: " + m_endTime + "."; } }
 
 		private Queue<Uri> m_queue;
+		private HashSet<Uri> m_ignoredURLs;
 		private Uri m_startURL;
 		private DateTime m_endTime;
 		private int m_brokenCount;
@@ -81,7 +85,8 @@ namespace URLValidator
 		}
 		private void EnterProcess()
 		{
-			Push(m_startURL);
+			passedURLs.Add(m_startURL, 0);
+			m_queue.Enqueue(m_startURL);
 
 			while (!isQueueEmpty)
 			{
@@ -100,7 +105,7 @@ namespace URLValidator
 					IsURLFromStartDomain(currentURL))
 				{
 					CLogger.Write("Response code valid");
-					List<string> pageURLCollection = GetURLsFromPage(HTML);
+					List<string> pageURLCollection = GetURLsFromHTML(HTML);
 					CLogger.Write("Take " + pageURLCollection.Count + " new URLs");
 					PushURLsCollection(currentURL, pageURLCollection);
 				}
@@ -112,11 +117,6 @@ namespace URLValidator
 		{
 			HttpWebResponse response = null;
 			HTML = string.Empty;
-
-			if (IsMailto(URL))
-			{
-				return NOT_FOUND;
-			}
 
 			try
 			{
@@ -139,24 +139,38 @@ namespace URLValidator
 
 			return (int)response.StatusCode;
 		}
-		private List<string> GetURLsFromPage(string html)
+		private List<string> GetURLsFromHTML(string html)
 		{
+			ListDelegate<string> add_if = (ref List<string> list, string item) =>
+			{
+				if (item != string.Empty) list.Add(item);
+			};
+
 			List<string> result = new List<string>();
 			HtmlDocument doc = new HtmlDocument();
 			doc.LoadHtml(html);
-			HtmlNodeCollection aNodes = doc.DocumentNode.SelectNodes("//a[@href]");
-
-			if (aNodes == null)
+			HtmlNodeCollection HTMLNodes = doc.DocumentNode.SelectNodes("//*");
+			if (HTMLNodes == null)
 			{
 				return result;
 			}
 
-			foreach (HtmlNode node in aNodes)
+			foreach (HtmlNode node in HTMLNodes)
 			{
-				result.Add(node.Attributes["href"].Value);
+				add_if(ref result, GetAttributeValue(node, "href"));
+				add_if(ref result, GetAttributeValue(node, "src"));
 			}
 	
 			return result;
+		}
+		private string GetAttributeValue(HtmlNode node, string attribute)
+		{
+			if (node == null || node.Attributes[attribute] == null)
+			{
+				return string.Empty;
+			}
+
+			return node.Attributes[attribute].Value;
 		}
 
 		private void PushURLsCollection(Uri parent, List<string> URLCollection)
@@ -164,37 +178,32 @@ namespace URLValidator
 			foreach (var URLName in URLCollection)
 			{
 				CLogger.Write("Try initialize as URL: " + URLName);
+				PrepareURLName(URLName);
 				Uri resultURL = null;
 
 				if (Uri.IsWellFormedUriString(URLName, UriKind.Absolute))
 				{
-					CLogger.Write("Absolute");
 					resultURL = new Uri(URLName);
 				}
 				else if (Uri.IsWellFormedUriString(URLName, UriKind.Relative))
 				{
-					CLogger.Write("Relative");
-					Uri relativeURL = new Uri(URLName);
+					Uri relativeURL = new Uri(URLName, UriKind.Relative);
 					resultURL = new Uri(m_startURL, relativeURL);
 				}
-				else
+
+				if (resultURL == null) { }
+				else if (IsIgnored(resultURL))
 				{
-					CLogger.Write("Undefined URL: " + URLName);
+					CLogger.Write("Ignore URL: " + URLName);
+					m_ignoredURLs.Add(resultURL);
 				}
-
-				Push(resultURL);
+				else if (!IsPassed(resultURL))
+				{
+					CLogger.Write("Push URL: " + resultURL);
+					passedURLs.Add(resultURL, 0);
+					m_queue.Enqueue(resultURL);
+				}
 			};
-		}
-		private void Push(Uri newURL)
-		{
-			if (newURL == null || passedURLs.ContainsKey(newURL))
-			{
-				return;
-			}
-
-			CLogger.Write("Push: " + newURL);
-			passedURLs.Add(newURL, -1);
-			m_queue.Enqueue(newURL);
 		}
 
 		private bool IsURLFromStartDomain(Uri URL)
@@ -211,12 +220,29 @@ namespace URLValidator
 		{
 			return pageStatus == GOOD_RESPONCE_CODE;
 		}
+		private bool IsPassed(Uri URL)
+		{
+			return
+				passedURLs.ContainsKey(URL) ||
+				m_ignoredURLs.Contains(URL);
+		}
+		private bool IsIgnored(Uri URL)
+		{
+			return
+				URL == null ||
+				m_ignoredURLs.Contains(URL) ||
+				IsMailto(URL);
+		}
 		private bool IsMailto(Uri URL)
 		{
 			string[] parts = URL.ToString().Split(':');
 			return parts[0].ToLower() == "mailto";
 		}
 
+		private string PrepareURLName(string URLName)
+		{
+			return URLName;
+		}
 		private void CalcResults()
 		{
 			m_endTime = DateTime.Now;
@@ -231,4 +257,5 @@ namespace URLValidator
 	}
 
 	delegate void BoolStrDelegate(bool isTrue, string str);
+	delegate void ListDelegate<T>(ref List<T> list, T element);
 }

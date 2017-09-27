@@ -8,9 +8,14 @@ namespace URLValidator
 {
 	static class CLogger
 	{
+		public static bool isActive { get; set; } = false;
+
 		public static void Write(string message)
 		{
-			Console.WriteLine("> " + message);
+			if (isActive)
+			{
+				Console.WriteLine("> " + message);
+			}
 		}
 	}
 }

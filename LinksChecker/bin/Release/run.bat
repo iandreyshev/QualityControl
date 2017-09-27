@@ -1,4 +1,4 @@
 @echo off
 set PROGRAM=LinksChecker.exe
 
-%PROGRAM% "http://aderkin.ru/"
+%PROGRAM% "http://aderkin.ru" -log
