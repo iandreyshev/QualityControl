@@ -25,7 +25,7 @@ namespace URLValidator
 				Console.WriteLine(e.Message);
 				return EXIT_SUCCESS;
 			}
-
+			Console.WriteLine("Program success.");
 			return EXIT_FAILED;
 		}
 		static void CreateReports(CURLValidator validator)
@@ -33,7 +33,7 @@ namespace URLValidator
 			StreamWriter allURLsWritter = new StreamWriter(ALL_URLS_FILE);
 			StreamWriter badURLsWritter = new StreamWriter(BAD_URLS_FILE);
 
-			foreach (KeyValuePair<Uri, int> record in validator.passedLinks)
+			foreach (KeyValuePair<Uri, int> record in validator.passedURLs)
 			{
 				string fileRecord = record.Key + " " + record.Value;
 
@@ -41,18 +41,19 @@ namespace URLValidator
 				{
 					badURLsWritter.WriteLine(fileRecord);
 				}
-
 				allURLsWritter.WriteLine(fileRecord);
 			}
 
-			allURLsWritter.WriteLine(validator.endTime);
-			badURLsWritter.WriteLine(validator.endTime);
+			allURLsWritter.WriteLine(validator.commonReport);
+			badURLsWritter.WriteLine(validator.badReport);
+			allURLsWritter.Close();
+			badURLsWritter.Close();
 		}
 
 		private const int ARGS_COUNT = 0;
 		private const int EXIT_SUCCESS = 0;
 		private const int EXIT_FAILED = 1;
 		private const string ALL_URLS_FILE = "URLsList.txt";
-		private const string BAD_URLS_FILE = "BadURLsList.txt";
+		private const string BAD_URLS_FILE = "BrokenURLsList.txt";
 	}
 }
