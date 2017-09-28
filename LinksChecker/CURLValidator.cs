@@ -55,9 +55,12 @@ namespace URLValidator
 			m_ignoredNames = new HashSet<string>();
 			m_endTime = DateTime.MinValue;
 			m_brokenCount = 0;
+			m_invalidSchemes = new HashSet<string>();
+			foreach (string scheme in IGNORED_SCHEMES)
+				m_invalidSchemes.Add(scheme);
 		}
 
-		private const string EMPTY_BLANK = "about:blank";
+		private readonly string[] IGNORED_SCHEMES = { "mailto", "file", "tel" };
 
 		private Uri queueTop { get { return m_queue.Dequeue(); } }
 		private bool isQueueEmpty { get { return queueSize == 0; } }
@@ -67,6 +70,7 @@ namespace URLValidator
 		private Queue<Uri> m_queue;
 		private HashSet<Uri> m_ignoredURLs;
 		private HashSet<string> m_ignoredNames;
+		private HashSet<string> m_invalidSchemes;
 		private Uri m_startURL;
 		private DateTime m_endTime;
 		private int m_brokenCount;
@@ -250,21 +254,15 @@ namespace URLValidator
 			return
 				URL == null ||
 				m_ignoredURLs.Contains(URL) ||
-				IsMailto(URL) ||
-				IsFile(URL);
+				IsInvalidScheme(URL);
 		}
 		private bool IsIgnored(string URLName)
 		{
 			return m_ignoredNames.Contains(URLName);
 		}
-		private bool IsMailto(Uri URL)
+		private bool IsInvalidScheme(Uri URL)
 		{
-			string[] parts = URL.ToString().Split(':');
-			return parts[0].ToLower() == "mailto";
-		}
-		private bool IsFile(Uri URL)
-		{
-			return URL.Scheme.ToLower() == "file";
+			return m_invalidSchemes.Contains(URL.Scheme.ToLower());
 		}
 
 		private void CalcResults()

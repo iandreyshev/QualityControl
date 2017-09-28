@@ -21,7 +21,6 @@ namespace URLValidator
 				Console.WriteLine(e.Message);
 				return EXIT_SUCCESS;
 			}
-			Console.WriteLine("Done.");
 			return EXIT_FAILED;
 		}
 		static void InitParams(string[] args)
