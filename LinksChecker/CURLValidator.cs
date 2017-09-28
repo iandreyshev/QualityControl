@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.IO;
 using HtmlAgilityPack;
-//using Freya.Types.Uri;
 
 namespace URLValidator
 {
@@ -57,6 +56,8 @@ namespace URLValidator
 			m_brokenCount = 0;
 		}
 
+		private const string EMPTY_BLANK = "about:blank";
+
 		private Uri queueTop { get { return m_queue.Dequeue(); } }
 		private bool isQueueEmpty { get { return queueSize == 0; } }
 		private uint queueSize { get { return (uint)m_queue.Count; } }
@@ -92,22 +93,21 @@ namespace URLValidator
 			{
 				CLogger.Write("Queue size: " + queueSize);
 				CLogger.Write("Passed list size: " + passedURLs.Count);
+
 				Uri currentURL = queueTop;
 				CLogger.Write("Work with URL: " + currentURL);
 
 				string HTML;
 				int responseCode = GetHTMLFromURL(currentURL, out HTML);
-				CLogger.Write("Response code: " + responseCode);
 				passedURLs[currentURL] = responseCode;
-				CLogger.Write("Edit code complete");
+				CLogger.Write("Response code: " + responseCode);
 
 				if (IsResponseCodeValid(responseCode) &&
 					IsURLFromStartDomain(currentURL))
 				{
-					CLogger.Write("Response code valid");
-					List<string> pageURLCollection = GetURLsFromHTML(HTML);
-					CLogger.Write("Take " + pageURLCollection.Count + " new URLs");
-					PushURLsCollection(currentURL, pageURLCollection);
+					List<string> pageURLs = GetURLsFromHTML(HTML);
+					CLogger.Write("Take " + pageURLs.Count + " URLs names");
+					PushURLNames(currentURL, pageURLs);
 				}
 				CLogger.Write(string.Empty);
 			}
@@ -122,20 +122,15 @@ namespace URLValidator
 			{
 				HttpWebRequest request = WebRequest.Create(URL) as HttpWebRequest;
 				response = request.GetResponse() as HttpWebResponse;
-				CLogger.Write("Get response complete");
 			}
 			catch (WebException e)
 			{
-				HttpWebResponse badResponse = e.Response as HttpWebResponse;
-				return (badResponse == null) ? NOT_FOUND : (int)badResponse.StatusCode;
+				response = e.Response as HttpWebResponse;
+				return (response == null) ? NOT_FOUND : (int)response.StatusCode;
 			}
 
 			Stream stream = response.GetResponseStream();
-			CLogger.Write("Create stream complete");
-
-			StreamReader reader = new StreamReader(stream);
-			HTML = (reader).ReadToEnd();
-			CLogger.Write("Read stream complete");
+			HTML = (new StreamReader(stream)).ReadToEnd();
 
 			return (int)response.StatusCode;
 		}
@@ -173,37 +168,45 @@ namespace URLValidator
 			return node.Attributes[attribute].Value;
 		}
 
-		private void PushURLsCollection(Uri parent, List<string> URLCollection)
+		private void PushURLNames(Uri parent, List<string> URLNamesCollection)
 		{
-			foreach (var URLName in URLCollection)
+			foreach (var URLName in URLNamesCollection)
 			{
-				CLogger.Write("Try initialize as URL: " + URLName);
-				PrepareURLName(URLName);
-				Uri resultURL = null;
+				Uri result;
 
-				if (Uri.IsWellFormedUriString(URLName, UriKind.Absolute))
+				if (!ParseToURL(URLName, parent, out result))
 				{
-					resultURL = new Uri(URLName);
+					CLogger.ErrWrite("Can not parse name: " + URLName);
 				}
-				else if (Uri.IsWellFormedUriString(URLName, UriKind.Relative))
+				else if (IsIgnored(result))
 				{
-					Uri relativeURL = new Uri(URLName, UriKind.Relative);
-					resultURL = new Uri(m_startURL, relativeURL);
+					CLogger.Write("Ignore URL: " + result.ToString());
+					m_ignoredURLs.Add(result);
 				}
-
-				if (resultURL == null) { }
-				else if (IsIgnored(resultURL))
+				else if (!IsPassed(result))
 				{
-					CLogger.Write("Ignore URL: " + URLName);
-					m_ignoredURLs.Add(resultURL);
-				}
-				else if (!IsPassed(resultURL))
-				{
-					CLogger.Write("Push URL: " + resultURL);
-					passedURLs.Add(resultURL, 0);
-					m_queue.Enqueue(resultURL);
+					CLogger.Write("Push URL: " + result);
+					passedURLs.Add(result, 0);
+					m_queue.Enqueue(result);
 				}
 			};
+		}
+		private bool ParseToURL(string URLName, Uri parent, out Uri result)
+		{
+			CLogger.Write("Parse URL name: " + URLName);
+			result = null;
+
+			if (Uri.IsWellFormedUriString(URLName, UriKind.Absolute))
+			{
+				result = new Uri(URLName, UriKind.Absolute);
+			}
+			else if (Uri.IsWellFormedUriString(URLName, UriKind.Relative))
+			{
+				Uri relativeURL = new Uri(URLName, UriKind.Relative);
+				result = new Uri(parent, relativeURL);
+			}
+
+			return result != null;
 		}
 
 		private bool IsURLFromStartDomain(Uri URL)
@@ -231,18 +234,19 @@ namespace URLValidator
 			return
 				URL == null ||
 				m_ignoredURLs.Contains(URL) ||
-				IsMailto(URL);
+				IsMailto(URL) ||
+				IsAboutBlank(URL);
 		}
 		private bool IsMailto(Uri URL)
 		{
 			string[] parts = URL.ToString().Split(':');
 			return parts[0].ToLower() == "mailto";
 		}
-
-		private string PrepareURLName(string URLName)
+		private bool IsAboutBlank(Uri URL)
 		{
-			return URLName;
+			return URL.ToString() == EMPTY_BLANK;
 		}
+
 		private void CalcResults()
 		{
 			m_endTime = DateTime.Now;
@@ -256,6 +260,5 @@ namespace URLValidator
 		}
 	}
 
-	delegate void BoolStrDelegate(bool isTrue, string str);
 	delegate void ListDelegate<T>(ref List<T> list, T element);
 }

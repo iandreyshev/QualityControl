@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 namespace URLValidator
 {
@@ -15,6 +12,22 @@ namespace URLValidator
 			if (isActive)
 			{
 				Console.WriteLine("> " + message);
+			}
+		}
+		public static void ErrWrite(string message)
+		{
+			if (isActive)
+			{
+				StreamWriter writter = new StreamWriter("err.txt", true);
+				writter.WriteLine(message);
+				writter.Close();
+			}
+		}
+		private static void BreakLine()
+		{
+			if (isActive)
+			{
+				Console.WriteLine(string.Empty);
 			}
 		}
 	}

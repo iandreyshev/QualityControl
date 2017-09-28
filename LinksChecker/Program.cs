@@ -11,8 +11,9 @@ namespace URLValidator
 			try
 			{
 				InitParams(args);
+				CLogger.isActive = isLogActive;
 				CURLValidator validator = new CURLValidator();
-				validator.StartFrom(args[0]);
+				validator.StartFrom(startURL);
 				CreateReports(validator);
 			}
 			catch (Exception e)
@@ -25,16 +26,14 @@ namespace URLValidator
 		}
 		static void InitParams(string[] args)
 		{
-			if (args.Length < MIN_ARGS_COUNT)
+			if (args.Length < ARGS_COUNT)
 			{
 				throw new ArgumentException("Invalid arguments count.\n" +
 					"Use: LinksChecker.exe <first link>.");
 			}
 
-			if (args.Length >= MIN_ARGS_COUNT + 1 && args[1] == ON_LOG_ARG)
-			{
-				CLogger.isActive = true;
-			}
+			startURL = args[0];
+			isLogActive = args.Length >= ARGS_COUNT + 1 && args[1] == LOG_ARG;
 		}
 		static void CreateReports(CURLValidator validator)
 		{
@@ -59,11 +58,14 @@ namespace URLValidator
 			badURLsWritter.Close();
 		}
 
-		private const int MIN_ARGS_COUNT = 1;
+		private const int ARGS_COUNT = 1;
 		private const int EXIT_SUCCESS = 0;
 		private const int EXIT_FAILED = 1;
-		private const string ON_LOG_ARG = "-log";
+		private const string LOG_ARG = "-log";
 		private const string ALL_URLS_FILE = "URLsList.txt";
 		private const string BAD_URLS_FILE = "BrokenURLsList.txt";
+
+		private static string startURL { get; set; } = string.Empty;
+		private static bool isLogActive { get; set; } = false;
 	}
 }
