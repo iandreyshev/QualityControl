@@ -52,6 +52,7 @@ namespace URLValidator
 			passedURLs = new Dictionary<Uri, int>();
 			m_queue = new Queue<Uri>();
 			m_ignoredURLs = new HashSet<Uri>();
+			m_ignoredNames = new HashSet<string>();
 			m_endTime = DateTime.MinValue;
 			m_brokenCount = 0;
 		}
@@ -65,6 +66,7 @@ namespace URLValidator
 
 		private Queue<Uri> m_queue;
 		private HashSet<Uri> m_ignoredURLs;
+		private HashSet<string> m_ignoredNames;
 		private Uri m_startURL;
 		private DateTime m_endTime;
 		private int m_brokenCount;
@@ -172,11 +174,17 @@ namespace URLValidator
 		{
 			foreach (var URLName in URLNamesCollection)
 			{
+				if (IsIgnored(URLName))
+				{
+					continue;
+				}
+
 				Uri result;
 
 				if (!ParseToURL(URLName, parent, out result))
 				{
-					CLogger.ErrWrite("Can not parse name: " + URLName);
+					CLogger.ErrWrite("Can not parse URL name: " + URLName);
+					m_ignoredNames.Add(URLName);
 				}
 				else if (IsIgnored(result))
 				{
@@ -196,14 +204,22 @@ namespace URLValidator
 			CLogger.Write("Parse URL name: " + URLName);
 			result = null;
 
-			if (Uri.IsWellFormedUriString(URLName, UriKind.Absolute))
+			try
 			{
-				result = new Uri(URLName, UriKind.Absolute);
+				if (Uri.IsWellFormedUriString(URLName, UriKind.Absolute))
+				{
+					result = new Uri(URLName, UriKind.Absolute);
+				}
+				else if (Uri.IsWellFormedUriString(URLName, UriKind.Relative))
+				{
+					Uri relativeURL = new Uri(URLName, UriKind.Relative);
+					Uri newURL = new Uri(parent, relativeURL);
+					result = newURL;
+				}
 			}
-			else if (Uri.IsWellFormedUriString(URLName, UriKind.Relative))
+			catch (Exception)
 			{
-				Uri relativeURL = new Uri(URLName, UriKind.Relative);
-				result = new Uri(parent, relativeURL);
+				return false;
 			}
 
 			return result != null;
@@ -235,16 +251,20 @@ namespace URLValidator
 				URL == null ||
 				m_ignoredURLs.Contains(URL) ||
 				IsMailto(URL) ||
-				IsAboutBlank(URL);
+				IsFile(URL);
+		}
+		private bool IsIgnored(string URLName)
+		{
+			return m_ignoredNames.Contains(URLName);
 		}
 		private bool IsMailto(Uri URL)
 		{
 			string[] parts = URL.ToString().Split(':');
 			return parts[0].ToLower() == "mailto";
 		}
-		private bool IsAboutBlank(Uri URL)
+		private bool IsFile(Uri URL)
 		{
-			return URL.ToString() == EMPTY_BLANK;
+			return URL.Scheme.ToLower() == "file";
 		}
 
 		private void CalcResults()

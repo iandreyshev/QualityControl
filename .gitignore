@@ -265,3 +265,5 @@ __pycache__/
 *.pyc
 
 Ready/
+.bat
+.log
