@@ -60,7 +60,8 @@ namespace URLValidator
 				m_invalidSchemes.Add(scheme);
 		}
 
-		private readonly string[] IGNORED_SCHEMES = { "mailto", "file", "tel" };
+		private readonly string[] IGNORED_SCHEMES = {
+			"mailto", "file", "tel", "javascript" };
 
 		private Uri queueTop { get { return m_queue.Dequeue(); } }
 		private bool isQueueEmpty { get { return queueSize == 0; } }
@@ -104,12 +105,19 @@ namespace URLValidator
 				CLogger.Write("Work with URL: " + currentURL);
 
 				string HTML;
-				int responseCode = GetHTMLFromURL(currentURL, out HTML);
-				passedURLs[currentURL] = responseCode;
-				CLogger.Write("Response code: " + responseCode);
+				int responseCode;
+				if (GetHTMLFromURL(currentURL, out HTML, out responseCode))
+				{
+					CLogger.Write("Response code: " + responseCode);
+					passedURLs[currentURL] = responseCode;
+				}
+				else
+				{
+					CLogger.Write("URL was ignored");
+					m_ignoredURLs.Add(currentURL);
+				}
 
-				if (IsResponseCodeValid(responseCode) &&
-					IsURLFromStartDomain(currentURL))
+				if (IsResponseCodeValid(responseCode))
 				{
 					List<string> pageURLs = GetURLsFromHTML(HTML);
 					CLogger.Write("Take " + pageURLs.Count + " URLs names");
@@ -119,26 +127,31 @@ namespace URLValidator
 			}
 		}
 
-		private int GetHTMLFromURL(Uri URL, out string HTML)
+		private bool GetHTMLFromURL(Uri URL, out string HTML, out int code)
 		{
 			HttpWebResponse response = null;
 			HTML = string.Empty;
+			code = 0;
 
 			try
 			{
 				HttpWebRequest request = WebRequest.Create(URL) as HttpWebRequest;
 				response = request.GetResponse() as HttpWebResponse;
+				Stream stream = response.GetResponseStream();
+				HTML = (new StreamReader(stream)).ReadToEnd();
 			}
 			catch (WebException e)
 			{
 				response = e.Response as HttpWebResponse;
-				return (response == null) ? NOT_FOUND : (int)response.StatusCode;
+			}
+			catch (Exception)
+			{
+				return false;
 			}
 
-			Stream stream = response.GetResponseStream();
-			HTML = (new StreamReader(stream)).ReadToEnd();
+			code = (response == null) ? NOT_FOUND : (int)response.StatusCode;
 
-			return (int)response.StatusCode;
+			return true;
 		}
 		private List<string> GetURLsFromHTML(string html)
 		{
@@ -197,9 +210,13 @@ namespace URLValidator
 				}
 				else if (!IsPassed(result))
 				{
-					CLogger.Write("Push URL: " + result);
-					passedURLs.Add(result, 0);
-					m_queue.Enqueue(result);
+					if (IsURLFromStartDomain(result))
+					{
+						CLogger.Write("Push URL: " + result);
+						m_queue.Enqueue(result);
+						passedURLs.Add(result, 0);
+					}
+					m_ignoredURLs.Add(result);
 				}
 			};
 		}
