@@ -60,8 +60,7 @@ namespace URLValidator
 				m_invalidSchemes.Add(scheme);
 		}
 
-		private readonly string[] IGNORED_SCHEMES = {
-			"mailto", "file", "tel", "javascript" };
+		private readonly string[] IGNORED_SCHEMES = {};
 
 		private Uri queueTop { get { return m_queue.Dequeue(); } }
 		private bool isQueueEmpty { get { return queueSize == 0; } }

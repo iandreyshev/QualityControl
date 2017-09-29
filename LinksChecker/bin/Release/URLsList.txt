@@ -481,4 +481,4 @@ http://aderkin.ru/posts/tag/техподдержка/feed 200
 http://aderkin.ru/posts/tag/черный-квадрат/feed 200
 http://aderkin.ru/posts/author/freiman/page/5 200
 http://aderkin.ru/posts/author/freiman/page/6 200
-Checked 483 URLs. End time: 29.09.2017 8:54:46.
+Checked 483 URLs. End time: 29.09.2017 8:59:28.
