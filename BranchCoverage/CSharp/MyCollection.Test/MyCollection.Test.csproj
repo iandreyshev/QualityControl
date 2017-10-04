@@ -3,10 +3,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{A803C1FB-AFCD-42DB-97E4-19C91B140BDE}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{C20D4716-78FB-4955-BE0C-3B17708D2108}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MyCollections.Test</RootNamespace>
+    <RootNamespace>MyCollection.Test</RootNamespace>
     <AssemblyName>MyCollection.Test</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;COVERAGESCANNER_COVERAGE_COUNT;COVERAGESCANNER_COVERAGE_FULL_INSTRUMENTATION;COVERAGESCANNER_COVERAGE_MCC;COVERAGESCANNER_COVERAGE_ON</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -33,6 +33,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>MyCollection.Test.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -50,13 +53,14 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Program.cs" />
     <Compile Include="TestStack.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MyCollections\MyCollections.csproj">
-      <Project>{6e9862f8-ce2f-41f2-8d72-ece4c3349e83}</Project>
-      <Name>MyCollections</Name>
+    <ProjectReference Include="..\MyCollection\MyCollection.csproj">
+      <Project>{d02fda32-9669-4167-a64b-49b044548c5b}</Project>
+      <Name>MyCollection</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>
