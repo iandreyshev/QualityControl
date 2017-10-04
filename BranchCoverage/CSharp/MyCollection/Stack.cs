@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -85,6 +86,7 @@ namespace MyCollection
 				{
 					return true;
 				}
+				node = node.prev;
 			}
 
 			return false;
@@ -99,6 +101,7 @@ namespace MyCollection
 				{
 					return true;
 				}
+				node = node.prev;
 			}
 
 			return false;
@@ -120,15 +123,6 @@ namespace MyCollection
 		public List<T> ToList()
 		{
 			return new List<T>(ToArray());
-		}
-		public override string ToString()
-		{
-			if (isEmpty)
-			{
-				return "Stack is empty";
-			}
-
-			return "Stack type: " + typeof(T) + ". Stack size: " + m_size;
 		}
 
 		public void Clear()
