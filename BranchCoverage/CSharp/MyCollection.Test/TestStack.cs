@@ -1,6 +1,8 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using SysCol = System.Collections.Generic;
+
 namespace MyCollection.Test.Stack
 {
 	[TestClass]
@@ -18,6 +20,47 @@ namespace MyCollection.Test.Stack
 			Stack<string> stack = new Stack<string>();
 			Assert.AreEqual(stack.size, 0);
 		}
+		[TestMethod]
+		public void create_stack_with_start_size_0()
+		{
+			ushort size = 0;
+
+			Stack<string> stack = new Stack<string>(size);
+			Assert.AreEqual(stack.size, size);
+		}
+		[TestMethod]
+		public void create_stack_with_max_start_size()
+		{
+			ushort size = ushort.MaxValue;
+
+			Stack<string> stack = new Stack<string>(size);
+			Assert.AreEqual(stack.size, size);
+		}
+		[TestMethod]
+		[ExpectedException(typeof(ArgumentNullException))]
+		public void create_stack_from_null_array()
+		{
+			CustomClass[] array = null;
+			Stack<CustomClass> stack = new Stack<CustomClass>(array);
+		}
+		[TestMethod]
+		public void create_stack_from_empty_array()
+		{
+			CustomClass[] array = new CustomClass[0];
+			Stack<CustomClass> stack = new Stack<CustomClass>(array);
+			Assert.AreEqual(stack.size, array.Length);
+		}
+		[TestMethod]
+		public void create_stack_from_array_with_max_elements_count()
+		{
+			CustomClass[] array = new CustomClass[ushort.MaxValue];
+			for (int i = 0; i < array.Length; ++i)
+			{
+				array[i] = new CustomClass();
+			}
+			Stack<CustomClass> stack = new Stack<CustomClass>(array);
+			Assert.AreEqual(stack.size, array.Length);
+		}
 	}
 	[TestClass]
 	public class Push
@@ -34,13 +77,13 @@ namespace MyCollection.Test.Stack
 		[ExpectedException(typeof(OutOfMemoryException))]
 		public void stack_overflow_after_ushort_max_elements_count()
 		{
-			Stack<EmptyClass> stack = new Stack<EmptyClass>();
+			Stack<CustomClass> stack = new Stack<CustomClass>();
 
 			try
 			{
 				for (int i = 0; i < ushort.MaxValue; ++i)
 				{
-					stack.Push(new EmptyClass());
+					stack.Push(new CustomClass());
 				}
 			}
 			catch (Exception)
@@ -48,7 +91,14 @@ namespace MyCollection.Test.Stack
 				Assert.Fail();
 			}
 
-			stack.Push(new EmptyClass());
+			stack.Push(new CustomClass());
+		}
+		[TestMethod]
+		[ExpectedException(typeof(ArgumentNullException))]
+		public void push_null_not_allowed()
+		{
+			Stack<CustomClass> stack = new Stack<CustomClass>();
+			stack.Push(null);
 		}
 	}
 	[TestClass]
@@ -58,7 +108,7 @@ namespace MyCollection.Test.Stack
 		[ExpectedException(typeof(InvalidOperationException))]
 		public void throw_exception_if_pop_from_empty_stack()
 		{
-			Stack<EmptyClass> stack = new Stack<EmptyClass>();
+			Stack<CustomClass> stack = new Stack<CustomClass>();
 			stack.Pop();
 		}
 	}
@@ -190,9 +240,161 @@ namespace MyCollection.Test.Stack
 			Assert.IsTrue(isContainStrByPredicate);
 		}
 	}
-
-	class EmptyClass
+	[TestClass]
+	public class Convert
 	{
+		[TestMethod]
+		public void empty_stack_to_array()
+		{
+			Stack<CustomClass> stack = new Stack<CustomClass>();
+			CustomClass[] arrFromStack = stack.ToArray();
 
+			Assert.AreEqual(arrFromStack.Length, 0);
+		}
+		[TestMethod]
+		public void not_empty_stack_to_array()
+		{
+			string[] notEmptyArray = { "0", "1", "2" };
+			Stack<string> stack = new Stack<string>();
+			stack.Push(notEmptyArray[2]);
+			stack.Push(notEmptyArray[1]);
+			stack.Push(notEmptyArray[0]);
+			string[] arrFromStack = stack.ToArray();
+
+			Assert.IsTrue(Utils.Compare(arrFromStack, notEmptyArray));
+		}
+		[TestMethod]
+		public void empty_stack_to_list()
+		{
+			Stack<CustomClass> stack = new Stack<CustomClass>();
+			SysCol.List<CustomClass> listFromStack = stack.ToList();
+
+			Assert.AreEqual(listFromStack.Count, 0);
+		}
+		[TestMethod]
+		public void not_empty_stack_to_list()
+		{
+			SysCol.List<string> notEmptyList = new SysCol.List<string>();
+			notEmptyList.Add("0");
+			notEmptyList.Add("1");
+			notEmptyList.Add("2");
+
+			Stack<string> stack = new Stack<string>();
+			stack.Push(notEmptyList[2]);
+			stack.Push(notEmptyList[1]);
+			stack.Push(notEmptyList[0]);
+			SysCol.List<string> listFromStack = stack.ToList();
+
+			Assert.IsTrue(Utils.Compare(notEmptyList, listFromStack));
+		}
+	}
+	[TestClass]
+	public class ForeachOperator
+	{
+		[TestMethod]
+		public void foeeach_operator_on_empty_stack()
+		{
+			Stack<string> stack = new Stack<string>();
+
+			foreach(string str in stack)
+			{
+				Assert.Fail();
+			}
+		}
+		[TestMethod]
+		public void foeeach_operator_on_stack_with_elements()
+		{
+			string[] initArray = { "t", "s", "e", "T" };
+			Stack<string> stack = new Stack<string>(initArray);
+			string result = "";
+
+			foreach (string element in stack)
+			{
+				result += element;
+			}
+
+			Assert.AreEqual("Test", result);
+		}
+	}
+	[TestClass]
+	public class CopyTo
+	{
+		[TestMethod]
+		[ExpectedException(typeof(ArgumentNullException))]
+		public void copy_to_null_throw_exception()
+		{
+			Stack<CustomClass> stack = new Stack<CustomClass>();
+			CustomClass[] array = null;
+			stack.CopyTo(array, 0);
+		}
+		[TestMethod]
+		[ExpectedException(typeof(ArgumentException))]
+		public void copy_to_array_with_index_less_than_zero_throw_exception()
+		{
+			Stack<CustomClass> stack = new Stack<CustomClass>();
+			CustomClass[] array = new CustomClass[0];
+			stack.CopyTo(array, -1);
+		}
+		[TestMethod]
+		public void copy_to_array_with_elements_from_first_element()
+		{
+			string[] result = { "T", "e", "s", "t" };
+			string[] initArr = { "t", "s", "e", "T" };
+			string[] copyToArr = { "", "", "", "" };
+
+			Stack<string> stack = new Stack<string>(initArr);
+			stack.CopyTo(copyToArr, 0);
+			Assert.IsTrue(Utils.Compare(result, copyToArr));
+		}
+		[TestMethod]
+		public void copy_to_array_with_elements_if_start_index_greather_than_capacity()
+		{
+			string[] initArr = { "t", "s", "e", "T" };
+			string[] result = { };
+			string[] copyToArr = { };
+
+			Stack<string> stack = new Stack<string>(initArr);
+			stack.CopyTo(copyToArr, ushort.MaxValue);
+			Assert.IsTrue(Utils.Compare(result, copyToArr));
+		}
+	}
+
+	class CustomClass
+	{
+	}
+
+	class Utils
+	{
+		public static bool Compare<T>(SysCol.List<T> first, SysCol.List<T> second)
+			where T : IComparable
+		{
+			return Compare<T>(first.ToArray(), second.ToArray());
+		}
+		public static bool Compare<T>(T[] first, T[] second) where T : IComparable
+		{
+			bool isEqual = true;
+
+			if (first == null || second == null)
+			{
+				isEqual = (first == second);
+			}
+			else if (first.Length != second.Length)
+			{
+				isEqual = false;
+			}
+			else
+			{
+				for (int i = 0; i < first.Length; ++i)
+				{
+					if (first[i].CompareTo(second[i]) != 0)
+					{
+						isEqual = false;
+						break;
+					}
+				}
+			}
+
+			return isEqual;
+		}
 	}
 }
